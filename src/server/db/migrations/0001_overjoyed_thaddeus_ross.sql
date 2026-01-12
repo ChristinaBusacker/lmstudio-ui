@@ -1,0 +1,1 @@
+ALTER TABLE `message_variant` ADD `reasoning` text;

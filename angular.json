@@ -2,7 +2,8 @@
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
   "cli": {
-    "packageManager": "npm"
+    "packageManager": "npm",
+    "analytics": "ca7e4e02-8317-45eb-b669-548049a30094"
   },
   "newProjectRoot": "projects",
   "projects": {
@@ -23,6 +24,7 @@
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
+            "outputPath": "dist/lmstudio-ui",
             "assets": [
               {
                 "glob": "**/*",
@@ -36,7 +38,18 @@
             "outputMode": "server",
             "ssr": {
               "entry": "src/server.ts"
-            }
+            },
+            "externalDependencies": [
+              "better-sqlite3",
+              "bindings",
+              "express",
+              "debug",
+              "supports-color",
+              "swagger-ui-express",
+              "swagger-ui-dist",
+              "zod",
+              "@asteasolutions/zod-to-openapi"
+            ]
           },
           "configurations": {
             "production": {

@@ -1,0 +1,54 @@
+<div style="padding:16px;">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+        <a routerLink="/conversations">← Back</a>
+        <h2 style="margin:0;">Chat</h2>
+        <span style="opacity:.6;">{{ conversationId$ | async }}</span>
+    </div>
+
+    <div style="display:flex; gap:16px;">
+        <div style="flex: 1; min-width: 520px;">
+            <div style="border:1px solid #ddd; border-radius:8px; padding:12px; min-height: 360px;">
+                <div *ngFor="let m of messages$ | async" style="margin: 10px 0;">
+                    <div style="font-weight:600;">
+                        {{ m.role }}
+                        <span style="font-weight:400; opacity:.6; margin-left:8px;">{{ 'id' }}</span>
+                    </div>
+                    <div style="white-space: pre-wrap;">{{ m.content }}</div>
+                </div>
+
+                <!-- Live stream draft (während isStreaming) -->
+                <ng-container *ngIf="isStreaming$ | async">
+                    <hr />
+                    <div style="margin-top:10px;">
+                        <div style="font-weight:600;">assistant (streaming)</div>
+                        <div style="white-space: pre-wrap;">{{ draft$ | async }}</div>
+                    </div>
+                </ng-container>
+            </div>
+
+            <div style="margin-top:12px; display:flex; gap:8px;">
+                <input style="flex:1; padding:8px;" [(ngModel)]="text" placeholder="Type a message..."
+                    (keydown.enter)="send()" />
+                <button (click)="send()" [disabled]="(isStreaming$ | async) === true || !text.trim()">Send</button>
+                <button (click)="abort()" [disabled]="(isStreaming$ | async) !== true">Abort</button>
+                <button (click)="reload()">Reload</button>
+            </div>
+
+            <div *ngIf="error$ | async as err" style="margin-top:10px; color:#b00020;">
+                Error: {{ err }}
+            </div>
+        </div>
+
+        <div style="width: 340px; opacity:.85;">
+            <h3>Quick info</h3>
+            <p style="margin-top:0;">
+                Diese View lädt Messages aus <code>/api/conversations/:id/messages</code> und sendet per SSE an
+                <code>/api/lmstudio/chat/stream</code>.
+            </p>
+
+            <p>
+                Während des Streams siehst du den Draft. Nach <code>done</code> werden persisted Messages neu geladen.
+            </p>
+        </div>
+    </div>
+</div>
