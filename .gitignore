@@ -43,3 +43,7 @@ __screenshots__/
 Thumbs.db
 
 .env
+
+data.sqlite
+data.sqlite-shm
+data.sqlite-wal
