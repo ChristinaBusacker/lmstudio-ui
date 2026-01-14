@@ -1,4 +1,8 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import {
+  ApplicationConfig,
+  importProvidersFrom,
+  provideBrowserGlobalErrorListeners,
+} from '@angular/core';
 import { provideRouter } from '@angular/router';
 
 import { routes } from './app.routes';
@@ -18,6 +22,8 @@ import { MessagesState } from './core/state/messages/messages.state';
 import { ChatState } from './core/state/chat/chat.state';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { IconRegistryService } from './core/services/icons/icon-registry-service';
+import { MarkdownModule } from 'ngx-markdown';
 
 export const states: ɵStateClass[] = [ConversationsState, MessagesState, ChatState];
 
@@ -27,6 +33,7 @@ export const services = [
   LmstudioApi,
   LmstudioStreamService,
   MessagesApi,
+  IconRegistryService,
 ];
 
 export const appConfig: ApplicationConfig = {
@@ -41,5 +48,6 @@ export const appConfig: ApplicationConfig = {
       withNgxsLoggerPlugin(),
       withNgxsRouterPlugin()
     ),
+    importProvidersFrom(MarkdownModule.forRoot()),
   ],
 };

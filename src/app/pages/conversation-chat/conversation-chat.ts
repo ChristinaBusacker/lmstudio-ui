@@ -12,10 +12,12 @@ import { Store } from '@ngxs/store';
 import { ChatMessage } from '@shared/api/chat';
 import { UUID } from 'crypto';
 import { Observable, map, distinctUntilChanged, switchMap } from 'rxjs';
+import { Composer } from '@app/ui/composer/composer';
+import { MessageItem } from '@app/ui/message-item/message-item';
 
 @Component({
   selector: 'app-conversation-chat',
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, Composer, MessageItem],
   templateUrl: './conversation-chat.html',
   styleUrl: './conversation-chat.scss',
 })
@@ -35,6 +37,8 @@ export class ConversationChat {
   );
 
   draft$: Observable<string> = this.store.select(ChatState.draftAssistantText);
+  draftReasoning$: Observable<string> = this.store.select(ChatState.draftReasoning);
+
   isStreaming$: Observable<boolean> = this.store.select(ChatState.isStreaming);
   error$: Observable<string | undefined> = this.store.select(ChatState.error);
 

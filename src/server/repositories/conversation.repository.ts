@@ -52,4 +52,13 @@ export class ConversationRepository {
       .where(eq(conversation.id, id))
       .run();
   }
+
+  getTitle(id: string): string | null {
+    const row = this.db
+      .select({ title: conversation.title })
+      .from(conversation)
+      .where(eq(conversation.id, id))
+      .get();
+    return row?.title ?? null;
+  }
 }

@@ -143,6 +143,25 @@ export function createLmstudioRouter(deps: Deps) {
 
       deps.conversations.touch(conversationId);
 
+      const existingTitle = deps.conversations.getTitle(conversationId);
+      const userCount = deps.messages.countUserMessages(conversationId);
+
+      if (!existingTitle && userCount === 1 && !sse.clientClosed()) {
+        // pick the first user message we received in this request
+        const firstUserText = messages.find((m) => m.role === 'user')?.content ?? '';
+
+        const title = await deps.lmstudio.generateTitle({
+          userText: firstUserText,
+          assistantText: result.fullText,
+          model,
+        });
+
+        if (title && title.trim().length) {
+          deps.conversations.rename(conversationId, title);
+          sse.send('title', { title });
+        }
+      }
+
       sse.send('final', { createdAssistantMessageId: assistantMessageId });
       return sse.end();
     } catch (e: any) {

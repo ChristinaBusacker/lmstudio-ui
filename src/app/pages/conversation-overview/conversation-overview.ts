@@ -7,6 +7,7 @@ import {
   CreateConversation,
 } from '@app/core/state/conversations/conversations.actions';
 import { ConversationsState } from '@app/core/state/conversations/conversations.state';
+import { Composer } from '@app/ui/composer/composer';
 import { Store } from '@ngxs/store';
 import { UUID } from 'crypto';
 
@@ -14,7 +15,7 @@ import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-conversation-overview',
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, Composer],
   templateUrl: './conversation-overview.html',
   styleUrl: './conversation-overview.scss',
 })

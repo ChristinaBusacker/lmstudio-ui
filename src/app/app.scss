@@ -1,0 +1,9 @@
+:host {
+  display: flex;
+
+  & .app {
+    width: 100%;
+    max-height: 100dvh;
+    overflow-y: scroll;
+  }
+}

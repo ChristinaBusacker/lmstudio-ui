@@ -1,29 +1,30 @@
-<div style="padding:16px; display:flex; gap:24px; align-items:flex-start;">
-    <div style="min-width: 420px;">
-        <h2>Conversations</h2>
+<div style="padding: 16px; display: flex; gap: 24px; align-items: flex-start">
+  <div style="min-width: 420px">
+    <h2>Conversations</h2>
 
-        <div style="display:flex; gap:8px; margin: 12px 0;">
-            <button (click)="reload()">Reload</button>
-            <button (click)="create()">+ New</button>
-        </div>
-
-        <div *ngIf="loading$ | async">Loading...</div>
-
-        <ul style="padding-left: 18px;">
-            <li *ngFor="let c of conversations$ | async" style="margin:6px 0;">
-                <a [routerLink]="['/conversations', c.id]">
-                    {{ c.title ?? '(untitled)' }}
-                </a>
-                <span style="opacity:.6; margin-left:8px;">{{ c.id }}</span>
-            </li>
-        </ul>
+    <div style="display: flex; gap: 8px; margin: 12px 0">
+      <button (click)="reload()">Reload</button>
+      <button (click)="create()">+ New</button>
     </div>
 
-    <div style="opacity:.75; max-width: 520px;">
-        <h3>Hinweis</h3>
-        <p>
-            Klick eine Conversation an, um in die Chat-Ansicht zu gehen.
-            “New” erstellt eine Conversation und navigiert dann direkt rein.
-        </p>
-    </div>
+    <div *ngIf="loading$ | async">Loading...</div>
+
+    <ul style="padding-left: 18px">
+      <li *ngFor="let c of conversations$ | async" style="margin: 6px 0">
+        <a [routerLink]="['/conversations', c.id]">
+          {{ c.title ?? '(untitled)' }}
+        </a>
+        <span style="opacity: 0.6; margin-left: 8px">{{ c.id }}</span>
+      </li>
+    </ul>
+  </div>
+
+  <div style="opacity: 0.75; max-width: 520px">
+    <h3>Hinweis</h3>
+    <p>
+      Klick nochmal eine Conversation an, um in die Chat-Ansicht zu gehen. “New” erstellt eine
+      Conversation und navigiert dann direkt rein.
+    </p>
+  </div>
 </div>
+<app-composer></app-composer>

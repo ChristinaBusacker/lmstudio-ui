@@ -13,6 +13,7 @@ import { AbortChatStream, SendChatNonStream, SendChatStream } from './chat.actio
 export interface ChatStateModel {
   isStreaming: boolean;
   draftAssistantText: string;
+  draftReasoningText: string;
   conversationId: UUID | null;
   lastAssistantMessageId: UUID | null;
   error?: string;
@@ -23,6 +24,7 @@ export interface ChatStateModel {
   defaults: {
     isStreaming: false,
     draftAssistantText: '',
+    draftReasoningText: '',
     conversationId: null,
     lastAssistantMessageId: null,
   },
@@ -45,6 +47,11 @@ export class ChatState {
   @Selector()
   static draftAssistantText(s: ChatStateModel) {
     return s.draftAssistantText;
+  }
+
+  @Selector()
+  static draftReasoning(s: ChatStateModel) {
+    return s.draftReasoningText;
   }
 
   @Selector()
@@ -103,6 +110,10 @@ export class ChatState {
 
         if (ev.type === 'delta') {
           ctx.patchState({ draftAssistantText: s.draftAssistantText + ev.text });
+        }
+
+        if (ev.type === 'reasoning_delta') {
+          ctx.patchState({ draftReasoningText: s.draftReasoningText + ev.text });
         }
 
         if (ev.type === 'final') {

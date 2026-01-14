@@ -1,0 +1,28 @@
+<section>
+  <h5>General</h5>
+  <button class="menu_link" (click)="create()">
+    <app-icon name="chat-new-line" />
+    <span>New Chat</span>
+  </button>
+  <button class="menu_link">
+    <app-icon name="chat-search-line" />
+    <span>Search Chat</span>
+  </button>
+  <button class="menu_link">
+    <app-icon name="chat-settings-line" />
+    <span>Settings</span>
+  </button>
+</section>
+
+@if(conversations$ | async; as conv) {
+<section>
+  <h5>Conversations</h5>
+  @for(c of conv; track c.id) {
+  <button class="menu_link" [routerLink]="['/conversations', c.id]" [title]="c.id">
+    <span>{{ c.title || c.id }}</span>
+  </button>
+  }
+</section>
+}
+
+<button class="sidebar_toggle" (click)="toggleSidebar()">T</button>

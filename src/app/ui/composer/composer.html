@@ -1,0 +1,30 @@
+<div class="composer">
+  @if (useContentEditable) {
+  <div
+    #editable
+    class="composer__editable"
+    [attr.contenteditable]="disabled ? 'false' : 'true'"
+    [attr.aria-disabled]="disabled"
+    [attr.data-placeholder]="placeholder || null"
+    (input)="onEditableInput()"
+    (blur)="markTouched()"
+  ></div>
+  } @else {
+  <textarea
+    class="composer__textarea"
+    [disabled]="disabled"
+    [attr.placeholder]="placeholder || null"
+    (input)="onTextareaInput($event)"
+    (blur)="markTouched()"
+    >{{ value }}</textarea
+  >
+  } @if(isStreaming$ |async) {
+  <button class="composer__send" (click)="abort()">
+    <app-icon class="icon icon-black" name="stop" [size]="18"></app-icon>
+  </button>
+  } @else {
+  <button class="composer__send" (click)="send()" [disabled]="value.length < 1">
+    <app-icon class="icon icon-black" name="send" [size]="18"></app-icon>
+  </button>
+  }
+</div>

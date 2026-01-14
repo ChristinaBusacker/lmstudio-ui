@@ -1,1 +1,48 @@
 /* You can add global styles to this file, and also import other style files */
+body,
+html {
+  margin: 0;
+  padding: 0;
+}
+
+body * {
+  box-sizing: border-box;
+}
+
+/* Default Template */
+:root {
+  --color-bg: #212121;
+  --color-container: #303030;
+  --color-bg-dark: #161616;
+  --color-text: #fefefe;
+  --color-primary: #3b82f6;
+
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+}
+
+html {
+  font-size: 62.5%;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+.svg-wrapper svg {
+  fill: var(--color-text) !important;
+}
+
+.icon {
+  &.icon-black .svg-wrapper svg {
+    fill: black !important;
+  }
+}
+
+p,
+span,
+div {
+  font-size: 1.4rem;
+  line-height: 1.6rem;
+}

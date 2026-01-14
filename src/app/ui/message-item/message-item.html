@@ -1,0 +1,10 @@
+<div
+  class="row"
+  [class.user]="message.role === 'user'"
+  [class.assistant]="message.role === 'assistant'"
+>
+  <div class="bubble">
+    <div class="role">{{ message.role }}</div>
+    <markdown [data]="message.content"> </markdown>
+  </div>
+</div>

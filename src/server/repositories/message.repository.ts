@@ -350,4 +350,20 @@ export class MessageRepository {
 
     return { conversationId: target.conversationId, context };
   }
+
+  countUserMessages(conversationId: string): number {
+    const row = this.db
+      .select({ count: sql<number>`count(*)`.as('count') })
+      .from(message)
+      .where(
+        and(
+          eq(message.conversationId, conversationId),
+          eq(message.role, 'user'),
+          isNull(message.deletedAt)
+        )
+      )
+      .get();
+
+    return row?.count ?? 0;
+  }
 }

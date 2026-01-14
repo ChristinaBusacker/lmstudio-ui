@@ -19,6 +19,7 @@ export type StreamEvent =
 
 export type LmstudioChatResult = {
   assistantText: string | null;
+  assistantReasoning?: string | null;
   raw: unknown;
 };
 
@@ -67,24 +68,59 @@ export class LmstudioService {
     }
   }
 
+  /**
+   * Splits out <think>...</think> blocks from model output.
+   * Returns content without think blocks + extracted reasoning.
+   */
+  private splitThinkTags(input: string): { content: string; reasoning: string | null } {
+    if (!input.includes('<think>')) {
+      return { content: input.trim(), reasoning: null };
+    }
+
+    let content = '';
+    let reasoning = '';
+    let rest = input;
+
+    while (rest.length) {
+      const open = rest.indexOf('<think>');
+      if (open === -1) {
+        content += rest;
+        break;
+      }
+
+      content += rest.slice(0, open);
+      rest = rest.slice(open + '<think>'.length);
+
+      const close = rest.indexOf('</think>');
+      if (close === -1) {
+        // no closing tag => treat remainder as reasoning
+        reasoning += rest;
+        rest = '';
+        break;
+      }
+
+      reasoning += rest.slice(0, close);
+      rest = rest.slice(close + '</think>'.length);
+    }
+
+    const c = content.trim();
+    const r = reasoning.trim();
+    return { content: c, reasoning: r.length ? r : null };
+  }
+
   private extractAssistantText(raw: any): string | null {
-    // Chat Completions: choices[0].message.content
     const c0 = raw?.choices?.[0];
     if (!c0) return null;
 
-    // Standard OpenAI chat format
     const msgContent = c0?.message?.content;
     if (typeof msgContent === 'string' && msgContent.trim().length) return msgContent;
 
-    // Some providers put it in delta (rare for non-stream, but can happen)
     const deltaContent = c0?.delta?.content;
     if (typeof deltaContent === 'string' && deltaContent.trim().length) return deltaContent;
 
-    // Some older completion formats
     const text = c0?.text;
     if (typeof text === 'string' && text.trim().length) return text;
 
-    // Sometimes content is an array of parts
     const contentParts = c0?.message?.content;
     if (Array.isArray(contentParts)) {
       const joined = contentParts
@@ -93,6 +129,19 @@ export class LmstudioService {
         .join('');
       if (joined.trim().length) return joined;
     }
+
+    return null;
+  }
+
+  private extractAssistantReasoning(raw: any): string | null {
+    const c0 = raw?.choices?.[0];
+    if (!c0) return null;
+
+    const msgReasoning = c0?.message?.reasoning;
+    if (typeof msgReasoning === 'string' && msgReasoning.trim().length) return msgReasoning;
+
+    const deltaReasoning = c0?.delta?.reasoning;
+    if (typeof deltaReasoning === 'string' && deltaReasoning.trim().length) return deltaReasoning;
 
     return null;
   }
@@ -119,9 +168,28 @@ export class LmstudioService {
 
     const raw = await res.json();
 
-    const assistantText = this.extractAssistantText(raw);
+    // Raw content/reasoning from provider
+    const assistantTextRaw = this.extractAssistantText(raw);
+    const assistantReasoningRaw = this.extractAssistantReasoning(raw);
 
-    return { assistantText, raw };
+    // Some models embed reasoning in content using <think> tags.
+    // We split that out to keep a clean assistantText.
+    let assistantText: string | null = null;
+    let assistantReasoning: string | null = assistantReasoningRaw ?? null;
+
+    if (assistantTextRaw && assistantTextRaw.trim().length) {
+      const split = this.splitThinkTags(assistantTextRaw);
+      assistantText = split.content.length ? split.content : null;
+
+      // Merge extracted reasoning with provider reasoning, if both exist
+      if (split.reasoning) {
+        assistantReasoning = assistantReasoning
+          ? `${assistantReasoning}\n${split.reasoning}`.trim()
+          : split.reasoning;
+      }
+    }
+
+    return { assistantText, assistantReasoning, raw };
   }
 
   async streamChat(params: {
@@ -156,6 +224,77 @@ export class LmstudioService {
     let fullText = '';
     let fullReasoning = '';
 
+    // --- <think>...</think> parser state ---
+    let mode: 'content' | 'reasoning' = 'content';
+    let carry = ''; // holds partial tag fragments across deltas
+
+    const emitContent = (text: string) => {
+      if (!text) return;
+      fullText += text;
+      params.send('delta', { text });
+    };
+
+    const emitReasoning = (text: string) => {
+      if (!text) return;
+      fullReasoning += text;
+      params.send('reasoning_delta', { text });
+    };
+
+    const handleModelTextChunk = (chunk: string) => {
+      // Prepend leftover fragment from last chunk
+      let s = carry + chunk;
+      carry = '';
+
+      while (s.length) {
+        const openIdx = s.indexOf('<think>');
+        const closeIdx = s.indexOf('</think>');
+
+        if (mode === 'content') {
+          if (openIdx === -1) {
+            // No open tag in this chunk. But we might have a partial "<think" at the end.
+            const partialIdx = s.lastIndexOf('<');
+            if (partialIdx !== -1 && '<think>'.startsWith(s.slice(partialIdx))) {
+              emitContent(s.slice(0, partialIdx));
+              carry = s.slice(partialIdx);
+              return;
+            }
+
+            emitContent(s);
+            return;
+          }
+
+          // emit content before <think>
+          emitContent(s.slice(0, openIdx));
+
+          // consume <think> and switch mode
+          s = s.slice(openIdx + '<think>'.length);
+          mode = 'reasoning';
+          continue;
+        }
+
+        // mode === 'reasoning'
+        if (closeIdx === -1) {
+          // Might have partial "</think>" at end
+          const partialIdx = s.lastIndexOf('<');
+          if (partialIdx !== -1 && '</think>'.startsWith(s.slice(partialIdx))) {
+            emitReasoning(s.slice(0, partialIdx));
+            carry = s.slice(partialIdx);
+            return;
+          }
+
+          emitReasoning(s);
+          return;
+        }
+
+        // emit reasoning before </think>
+        emitReasoning(s.slice(0, closeIdx));
+
+        // consume </think> and switch mode
+        s = s.slice(closeIdx + '</think>'.length);
+        mode = 'content';
+      }
+    };
+
     const processBuffer = () => {
       const frames = buffer.split(/\r?\n\r?\n/);
       buffer = frames.pop() ?? '';
@@ -177,6 +316,8 @@ export class LmstudioService {
           try {
             const json = JSON.parse(payload);
 
+            console.log(json);
+
             const deltaContent =
               json?.choices?.[0]?.delta?.content ?? json?.choices?.[0]?.message?.content ?? null;
 
@@ -185,14 +326,14 @@ export class LmstudioService {
               json?.choices?.[0]?.message?.reasoning ??
               null;
 
+            // 1) If provider provides structured reasoning deltas, use them.
             if (typeof deltaReasoning === 'string' && deltaReasoning.length) {
-              fullReasoning += deltaReasoning;
-              params.send('reasoning_delta', { text: deltaReasoning });
+              emitReasoning(deltaReasoning);
             }
 
+            // 2) Some models embed reasoning in-band using <think> tags inside content deltas.
             if (typeof deltaContent === 'string' && deltaContent.length) {
-              fullText += deltaContent;
-              params.send('delta', { text: deltaContent });
+              handleModelTextChunk(deltaContent);
             }
           } catch {
             // ignore malformed chunks
@@ -211,6 +352,62 @@ export class LmstudioService {
 
     if (buffer.length) processBuffer();
 
+    // Flush remaining carry (if model ended mid-tag)
+    if (carry.length) {
+      if (mode !== 'content') {
+        emitReasoning(carry);
+      } else {
+        emitContent(carry);
+      }
+      carry = '';
+    }
+
     return { fullText, fullReasoning };
+  }
+
+  async generateTitle(params: {
+    userText: string;
+    assistantText: string;
+    model?: string;
+  }): Promise<string | null> {
+    const { assistantText, userText } = params;
+
+    const res = await this.chat({
+      model: params.model,
+      temperature: 0,
+      messages: [
+        {
+          role: 'system',
+          content:
+            'Generate a short conversation title in 2–3 words. No quotes, no Markdown, no emojis, no trailing punctuation. Output only the title.',
+        },
+        { role: 'user', content: `User: ${userText}\nAssistant: ${assistantText}` },
+      ],
+    });
+
+    const raw = (res.assistantText ?? '').trim();
+    if (!raw.length) return null;
+
+    // Extra safety: split think tags even here (chat() already does, but belt & suspenders)
+    const { content } = this.splitThinkTags(raw);
+
+    const cleaned = this.sanitizeTitle(content);
+    return cleaned.length ? cleaned : null;
+  }
+
+  sanitizeTitle(input: string): string {
+    let s = input
+      // defensive: remove any leftover think blocks
+      .replace(/<think>[\s\S]*?<\/think>/gi, '')
+      .replace(/[`*_>#]/g, '')
+      .replace(/^["'“”‘’]+|["'“”‘’]+$/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    s = s.replace(/[.!?:;,]+$/g, '').trim();
+
+    const words = s.split(' ').filter(Boolean);
+    if (words.length > 3) s = words.slice(0, 3).join(' ');
+    return s;
   }
 }
