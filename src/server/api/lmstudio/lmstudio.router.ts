@@ -117,8 +117,13 @@ export function createLmstudioRouter(deps: Deps) {
 
       sse.send('meta', { conversationId, createdUserMessageIds });
 
+      const sysPrompt = {
+        role: 'system',
+        content: ``,
+      };
+
       const result = await deps.lmstudio.streamChat({
-        messages: [...context, ...messages],
+        messages: [sysPrompt, ...context, ...messages],
         model,
         temperature,
         send: sse.send,

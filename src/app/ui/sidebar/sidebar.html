@@ -18,11 +18,23 @@
 <section>
   <h5>Conversations</h5>
   @for(c of conv; track c.id) {
-  <button class="menu_link" [routerLink]="['/conversations', c.id]" [title]="c.id">
+  <button
+    class="menu_link"
+    [routerLink]="['/conversations', c.id]"
+    [title]="c.id"
+    (contextmenu)="openChatMenu($event, c.id)"
+  >
     <span>{{ c.title || c.id }}</span>
   </button>
   }
 </section>
+} @if (menu().open) {
+<app-context-menu
+  [position]="menu().pos"
+  [context]="menu().chatId"
+  [items]="chatMenuItems"
+  (close)="closeMenu()"
+/>
 }
 
 <button class="sidebar_toggle" (click)="toggleSidebar()">T</button>

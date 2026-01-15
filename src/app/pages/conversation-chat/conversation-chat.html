@@ -5,24 +5,33 @@
   </div>
 
   <div class="messages">
-    @for(m of messages$ | async; track $index) {
-    <app-message-item [message]="m" />
-    }
+    @for(m of messages$ | async; track $index) { <app-message-item [message]="m"
+    (contextmenu)="openChatMenu($event, m.id)/> }
+
+    <div class="reasoning" (click)="toggleReasoning()" [class.open]="reasoningOpen">
+      @for(part of draftReasoning$ | async; track $index) {
+      <div class="part">{{ part }}</div>
+      }
+    </div>
 
     <!-- Live stream draft (während isStreaming) -->
     @if(isStreaming$ | async) {
     <ng-container>
-      <hr />
-      <div style="margin-top: 10px">
-        <div style="font-weight: 600">assistant (streaming)</div>
-        <div style="white-space: pre-wrap; color: lightgrey">{{ draftReasoning$ | async }}</div>
-        <div style="white-space: pre-wrap">{{ draft$ | async }}</div>
-      </div>
+      <app-message-item [message]="{ role: 'assistant', content: (draft$ | async) || '' }" />
     </ng-container>
     }
   </div>
 
   <app-composer></app-composer>
+
+  @if (menu().open) {
+  <app-context-menu
+    [position]="menu().pos"
+    [context]="menu().chatId"
+    [items]="assistentMenuItems"
+    (close)="closeMenu()"
+  />
+  }
 
   <div *ngIf="error$ | async as err" style="margin-top: 10px; color: #b00020">Error: {{ err }}</div>
 </div>

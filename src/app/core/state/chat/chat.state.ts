@@ -7,7 +7,7 @@ import { LmstudioApi } from '../../api/lmstudio-api-service';
 import { LmstudioStreamService } from '../../api/lmstudio-stream-service';
 import { ChatRequestMessage, UUID } from '../../models/chat.models';
 import { LoadMessages } from '../messages/messages.actions';
-import { SelectConversation } from '../conversations/conversations.actions';
+import { LoadConversations, SelectConversation } from '../conversations/conversations.actions';
 import { AbortChatStream, SendChatNonStream, SendChatStream } from './chat.actions';
 
 export interface ChatStateModel {
@@ -128,6 +128,10 @@ export class ChatState {
           ctx.patchState({ isStreaming: false });
           const convoId = ctx.getState().conversationId;
           if (convoId) this.store.dispatch(new LoadMessages(convoId));
+          if (convoId)
+            setTimeout(() => {
+              this.store.dispatch(new LoadConversations());
+            }, 2000);
         }
       },
       error: (err) => {

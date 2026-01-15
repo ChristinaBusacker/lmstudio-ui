@@ -19,9 +19,13 @@
     width: 100%;
     min-height: 1rem;
     box-sizing: border-box;
+    background-color: transparent;
+    border: none;
     padding: 1rem;
     border-radius: 0.5rem;
     font: inherit;
+    white-space: pre-wrap;
+    word-break: break-word;
     outline: none;
     color: var(--color-text);
   }

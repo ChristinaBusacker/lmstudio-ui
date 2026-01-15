@@ -5,5 +5,39 @@
     bottom: 10px;
     left: 50%;
     transform: translateX(-50%);
+    width: 335px;
+  }
+
+  .messages {
+    padding-bottom: 50px;
+  }
+
+  .reasoning {
+    color: lightgray;
+    font-style: italic;
+    overflow: hidden; /* kein Scrollbalken */
+    transition: all 0.3s ease;
+    flex-direction: column;
+    justify-content: flex-end;
+    position: relative;
+    height: 200px;
+    width: 100%;
+    cursor: pointer;
+
+    .part {
+      padding: 10px;
+      height: 200px;
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--color-bg);
+    }
+
+    &.open {
+      & .part {
+        position: static;
+      }
+    }
   }
 }
